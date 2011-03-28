@@ -38,6 +38,11 @@ class GameBoard(object):
 			return self._moves_list[-1]
 		return None
 		
+	def revoke_last_move(self):
+		if self._moves_list:
+			return self._moves_list.pop()
+		return None
+		
 	def get_height(self, column):
 		"""retuns the hight (y-coordinte) of a particular column"""
 		return len(filter(lambda m: m.column == column, self._moves_list))
@@ -148,7 +153,7 @@ class ComputerPlayer(object):
 	def _calculate_next_move(self):
 		"""The function that does the AI for the game"""
 		import datetime
-		print datetime.datetime.now() 
+		start = datetime.datetime.now() 
 		#If making the first move allways play the center
 		if self.board.moves_no() == 0:
 			return 4
@@ -182,7 +187,11 @@ class ComputerPlayer(object):
 		for move in moves:
 			#check if this move can lead to an immediate win
 			first_move_board = GameBoard(self.board)
-			first_move_board.make_move(self.color, move)
+			try:
+				first_move_board.make_move(self.color, move)
+			except ValueError:
+				continue
+
 			if first_move_board.is_won() == self.color:
 				return move
 			
@@ -193,24 +202,39 @@ class ComputerPlayer(object):
 			win_dict = defaultdict(int)
 			loss_dict = defaultdict(int)
 			
-			boards_cache = {}
+			boards_cache = {} #Cahce the 
 			
 			#Now go through them and count wins and losses
-			for next_moves in moves_tree:
+			for moves_branch in moves_tree:
 				#print next_moves
-				next_moves_board = GameBoard(first_move_board)
-				for i, next_move in enumerate(next_moves):
+				
+				#Check the cache if this board has been played
+				if not moves_branch[:-1] in boards_cache: #if not - save it
+					next_moves_board = GameBoard(first_move_board)
+					boards_cache[moves_branch[:-1]] = next_moves_board
+					next_moves = moves_branch
+					moves_cnt = 0
+				else: #just play the last move
+					next_moves_board = boards_cache[moves_branch[:-1]]
+					next_moves = (moves_branch[-1],) # Only the last element
+					moves_cnt = len(moves_branch)-2
+				
+				for next_move in next_moves:
 					try:
-						next_moves_board.make_move(moves_color_seq[i], next_move)
+						next_moves_board.make_move(moves_color_seq[moves_cnt], next_move)
 					except ValueError: #impossible move
 						continue
 					win = next_moves_board.is_won()
-					if win:
-						#print "found win"
-						if win == self.color:
-							win_dict[i+1] += 1
-						else:
-							loss_dict[i+1] += 1
+					if win == self.color:
+						win_dict[moves_cnt+2] += 1
+					elif win:
+						loss_dict[moves_cnt+2] += 1
+					moves_cnt +=1
+				
+				#Check if all the moves were playable 
+				if moves_ahead == next_moves_board.moves_no() - first_move_board.moves_no():
+					next_moves_board.revoke_last_move() #if all the moves were valid moves
+				
 			print "Done with da loop"
 			#Save the dictionaries
 			wins[move] = win_dict.copy()
@@ -224,7 +248,6 @@ class ComputerPlayer(object):
 			printdict(losses[k])
 		
 		#Now analize the data and try to eliminate moves that are bad 
-		#Also try to find the move that has the moste potentials for winning
 		candidates = [move for move in moves if 1 not in losses[move]] #eliminate all the ones that will lead to an immediate loss
 		print candidates
 		
@@ -232,21 +255,15 @@ class ComputerPlayer(object):
 			#means that all of the moves will lead to defeat so might as well play anything
 			return random.randint(1, len(moves))
 		
-		#eliminate those that have no wins
-		candidates = [move for move in candidates if wins[move]] 
-		print candidates
-		
-		#elliminate those that can lead to loss before a win
-		candidates = [move for move in candidates if not losses[move] or sorted(wins[move].keys())[0] <= sorted(losses[move].keys())[0]+1] 
-		print candidates
-		
 		#Order cqandidates by those that are most likely to lead to victory eg. more victories possible
 		candidates = sorted(candidates, key=lambda m: sum(wins[m].values()), reverse=True)
 		print candidates
-		print datetime.datetime.now()
+		end = datetime.datetime.now()
+		print end-start
 		return candidates[0]
 		
 	def play(self):
+		print "Thinking..."
 		move = self._calculate_next_move()
 		self.board.make_move(self.color, move)
 		
