@@ -107,6 +107,14 @@ class TestGameBoard(unittest.TestCase):
 		self.assertEqual(self.board._moves_list, board2._moves_list)
 		self.assertNotEqual(self.board, board2)
 		
+	def test_height(self):
+		self.assertEqual(self.board.get_height(6), 0)
+		for s in correct_moves_sequence:
+			self.board.make_move(*s)
+		self.assertEqual(self.board.get_height(1), 4)
+		self.assertEqual(self.board.get_height(3), 0)
+		self.assertEqual(self.board.get_height(-1), 0)
+		
 	def test_valid_fields(self):
 		for f in valid_fields:
 			self.assertTrue(self.board.is_valid_field(*f))

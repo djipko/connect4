@@ -2,6 +2,7 @@ from collections import namedtuple, defaultdict
 import itertools, copy, random, operator
 
 class _GameBoardMeta(type):
+	"""Metaclass for defining and blocking access to some atributes of a gameboard"""
 	_reserved_attrs = ['color', 'width', 'height']
 	
 	def __new__(cls, name, bases, dict):
@@ -98,10 +99,6 @@ class GameBoard(object):
 		
 		fields = [(r, c) for r in rows for c in columns]
 		
-		# print "\n"
-		# print self
-		# print fields
-		
 		for field in fields:
 			combinations = self.get_horizontals(*field) + self.get_verticals(*field) + self.get_diagonals(*field)
 			for c in combinations:
@@ -124,6 +121,11 @@ class GameBoard(object):
 		else:
 			raise ValueError, "Illegal color %s" %color
 			
+	def move_and_check(self, color, column):
+		"""Combination of the two previous methods"""
+	
+		self.make_move(color, column)
+		return self.is_won()
 	
 	def __repr__(self):
 		#create a list of columns - a matrix
@@ -167,13 +169,13 @@ class ComputerPlayer(object):
 			else:
 				return last_move - 1
 
-		wins = {}
-		losses = {}
+		wins = losses = {}
 		
 		#All posible moves eg. all valid columns
 		all_moves = xrange(1, self.board.width)
-		needed_moves = xrange(last_move-2 if last_move-2 in all_moves else 1, last_move+3 if last_move+3 in all_moves else 8)
-		moves = list(needed_moves)
+		needed_moves = [mov for mov in all_moves if self.board.get_height(mov) or (self.board.get_height(mov-1) or self.board.get_height(mov+1))]
+		print needed_moves
+		moves = needed_moves
 			
 		#number of moves ahead to calculate - one more if the opponent played first#
 		moves_ahead = 5
@@ -202,11 +204,11 @@ class ComputerPlayer(object):
 			win_dict = defaultdict(int)
 			loss_dict = defaultdict(int)
 			
-			boards_cache = {} #Cahce the 
+			boards_cache = {}
 			
 			#Now go through them and count wins and losses
 			for moves_branch in moves_tree:
-				#print next_moves
+				#print moves_branch
 				
 				#Check the cache if this board has been played
 				if not moves_branch[:-1] in boards_cache: #if not - save it
@@ -217,9 +219,10 @@ class ComputerPlayer(object):
 				else: #just play the last move
 					next_moves_board = boards_cache[moves_branch[:-1]]
 					next_moves = (moves_branch[-1],) # Only the last element
-					moves_cnt = len(moves_branch)-2
+					moves_cnt = len(moves_branch)-1
 				
 				for next_move in next_moves:
+					#print moves_cnt
 					try:
 						next_moves_board.make_move(moves_color_seq[moves_cnt], next_move)
 					except ValueError: #impossible move
@@ -248,7 +251,7 @@ class ComputerPlayer(object):
 			printdict(losses[k])
 		
 		#Now analize the data and try to eliminate moves that are bad 
-		candidates = [move for move in moves if 1 not in losses[move]] #eliminate all the ones that will lead to an immediate loss
+		candidates = [move for move in moves if 2 not in losses[move]] #eliminate all the ones that will lead to an immediate loss
 		print candidates
 		
 		if not candidates:
@@ -265,20 +268,23 @@ class ComputerPlayer(object):
 	def play(self):
 		print "Thinking..."
 		move = self._calculate_next_move()
-		self.board.make_move(self.color, move)
+		return self.board.move_and_check(self.color, move)
 		
 if __name__ == "__main__":
 	g = GameBoard()
 	cp = ComputerPlayer(g, 'red', True)
 	while 1:
-		cp.play()
-		won = g.is_won()
-		if won:
-			print "Won %s" %won
+		if cp.play():
+			print g, "\nComputer wins!"
 			exit()
 		print g
-		g.make_move('blue',int(raw_input("Make your move ->")))
-		print g
-		if won:
-			print "Won %s" %won
+		player_move = -1
+		while player_move not in xrange(1, g.width+1):
+			player_move = raw_input("Make your move blue (1-7) or q->")
+			if player_move in 'qQ':
+				exit()
+			player_move = int(player_move)
+		if g.move_and_check('blue', player_move):
+			print g, "\nYou win!"
 			exit()
+		print g
