@@ -193,9 +193,11 @@ class ComputerPlayer(object):
 			win_dict = defaultdict(int)
 			loss_dict = defaultdict(int)
 			
+			boards_cache = {}
+			
 			#Now go through them and count wins and losses
 			for next_moves in moves_tree:
-				print next_moves
+				#print next_moves
 				next_moves_board = GameBoard(first_move_board)
 				for i, next_move in enumerate(next_moves):
 					try:
