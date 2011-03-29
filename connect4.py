@@ -6,7 +6,7 @@ class _GameBoardMeta(type):
 	_reserved_attrs = ['color', 'width', 'height']
 	
 	def __new__(cls, name, bases, dict):
-		dict['colors'] = {'red': 'r', 'blue': 'b'} #Should be immutable dict created by descriptors
+		dict['colors'] = {'red': 'r', 'blue': 'b'} #TODO: Should be immutable dict created by descriptors
 		dict['width'] = 7
 		dict['height'] = 6
 		
@@ -161,14 +161,7 @@ class ComputerPlayer(object):
 			return 4
 			
 		last_move = self.board.get_last_move().column
-			
-		#If this is the second move of the game play always next to the last
-		if self.board.moves_no() == 1:
-			if last_move in xrange(1, self.board.width/2):
-				return last_move + 1
-			else:
-				return last_move - 1
-
+		
 		wins = losses = {}
 		
 		#All posible moves eg. all valid columns
@@ -210,33 +203,64 @@ class ComputerPlayer(object):
 			for moves_branch in moves_tree:
 				#print moves_branch
 				
-				#Check the cache if this board has been played
-				if not moves_branch[:-1] in boards_cache: #if not - save it
-					next_moves_board = GameBoard(first_move_board)
-					boards_cache[moves_branch[:-1]] = next_moves_board
-					next_moves = moves_branch
-					moves_cnt = 0
-				else: #just play the last move
-					next_moves_board = boards_cache[moves_branch[:-1]]
-					next_moves = (moves_branch[-1],) # Only the last element
-					moves_cnt = len(moves_branch)-1
-				
-				for next_move in next_moves:
-					#print moves_cnt
+				#Find the sub-branch that is not laready calculated
+				print moves_branch
+				sub_branches = [(tuple(moves_branch[:i]), moves_color_seq[:i], i-1) for i in xrange(1, len(moves_branch)-1) if tuple(moves_branch[:i]) not in boards_cache]
+				print sub_branches
+
+				for sub_branch, sub_colors, move_cnt in sub_branches:
+					if len(sub_branch) == 1:
+						next_moves_board = GameBoard(first_move_board)
+					else:
+						next_moves_board = GameBoard(boards_cache[sub_branch[:-1]])
+					boards_cache[sub_branch] = next_moves_board
+					next_move = sub_branch[-1]
+					
 					try:
-						next_moves_board.make_move(moves_color_seq[moves_cnt], next_move)
+						next_moves_board.make_move(sub_colors[move_cnt], next_move)
 					except ValueError: #impossible move
-						continue
+						#continue
+						pass
 					win = next_moves_board.is_won()
 					if win == self.color:
-						win_dict[moves_cnt+2] += 1
+						win_dict[move_cnt+2] += 1
 					elif win:
-						loss_dict[moves_cnt+2] += 1
-					moves_cnt +=1
+						loss_dict[move_cnt+2] += 1
 				
-				#Check if all the moves were playable 
-				if moves_ahead == next_moves_board.moves_no() - first_move_board.moves_no():
-					next_moves_board.revoke_last_move() #if all the moves were valid moves
+				# for k, v in boards_cache.items():
+					# print k
+					# print v
+
+				# exit()
+				
+				# #Check the cache if this board has been played
+				# if not moves_branch[:-1] in boards_cache: #if not - save it
+					# next_moves_board = GameBoard(first_move_board)
+					# boards_cache[moves_branch[:-1]] = next_moves_board
+					# next_moves = moves_branch
+					# moves_cnt = 0
+				# else: #just play the last move
+					# next_moves_board = boards_cache[moves_branch[:-1]]
+					# next_moves = (moves_branch[-1],) # Only the last element
+					# moves_cnt = len(moves_branch)-1
+				
+				
+				# for next_move in next_moves:
+					# #print moves_cnt
+					# try:
+						# next_moves_board.make_move(moves_color_seq[moves_cnt], next_move)
+					# except ValueError: #impossible move
+						# continue
+					# win = next_moves_board.is_won()
+					# if win == self.color:
+						# win_dict[moves_cnt+2] += 1
+					# elif win:
+						# loss_dict[moves_cnt+2] += 1
+					# moves_cnt +=1
+				
+				# #Check if all the moves were playable 
+				# if moves_ahead == next_moves_board.moves_no() - first_move_board.moves_no():
+					# next_moves_board.revoke_last_move() #if all the moves were valid moves
 				
 			print "Done with da loop"
 			#Save the dictionaries
