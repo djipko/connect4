@@ -151,6 +151,7 @@ class ComputerPlayer(object):
 		self.board = board
 		self.color = color
 		self.first_move = first_move
+		self.moves_ahead = 6
 	
 	def _calculate_next_move(self):
 		"""The function that does the AI for the game"""
@@ -165,13 +166,14 @@ class ComputerPlayer(object):
 		wins = losses = {}
 		
 		#All posible moves eg. all valid columns
-		all_moves = xrange(1, self.board.width)
+		all_moves = xrange(1, self.board.width+1)
 		needed_moves = [mov for mov in all_moves if self.board.get_height(mov) or (self.board.get_height(mov-1) or self.board.get_height(mov+1))]
+		#needed_moves = all_moves
 		print needed_moves
 		moves = needed_moves
 			
 		#number of moves ahead to calculate - one more if the opponent played first#
-		moves_ahead = 5
+		moves_ahead = self.moves_ahead
 		colors = self.board.colors.keys()
 		
 		#Sequence of moves
@@ -204,9 +206,9 @@ class ComputerPlayer(object):
 				#print moves_branch
 				
 				#Find the sub-branch that is not laready calculated
-				print moves_branch
+				#print moves_branch
 				sub_branches = [(tuple(moves_branch[:i]), moves_color_seq[:i], i-1) for i in xrange(1, len(moves_branch)-1) if tuple(moves_branch[:i]) not in boards_cache]
-				print sub_branches
+				#print sub_branches
 
 				for sub_branch, sub_colors, move_cnt in sub_branches:
 					if len(sub_branch) == 1:
@@ -219,17 +221,16 @@ class ComputerPlayer(object):
 					try:
 						next_moves_board.make_move(sub_colors[move_cnt], next_move)
 					except ValueError: #impossible move
-						#continue
-						pass
+						continue
 					win = next_moves_board.is_won()
 					if win == self.color:
 						win_dict[move_cnt+2] += 1
 					elif win:
 						loss_dict[move_cnt+2] += 1
 				
-				# for k, v in boards_cache.items():
-					# print k
-					# print v
+			# for k, v in sorted(boards_cache.items(), key=lambda i: i[0]):
+				# print k
+				# print v
 
 				# exit()
 				
@@ -307,7 +308,8 @@ if __name__ == "__main__":
 			player_move = raw_input("Make your move blue (1-7) or q->")
 			if player_move in 'qQ':
 				exit()
-			player_move = int(player_move)
+			player_move = int(player_move) if player_move in "".join(range(1,g.width+1) else -1
+
 		if g.move_and_check('blue', player_move):
 			print g, "\nYou win!"
 			exit()
