@@ -23,6 +23,8 @@ class _GameBoardMeta(type):
 
 
 class GameBoard(object):
+	"""Class representing the game bord with it's states and actions"""
+	
 	def __init__(self, copy = None):
 		if copy:
 			self._moves_list = copy._moves_list[:]
@@ -207,7 +209,7 @@ class ComputerPlayer(object):
 				
 				#Find the sub-branch that is not laready calculated
 				#print moves_branch
-				sub_branches = [(tuple(moves_branch[:i]), moves_color_seq[:i], i-1) for i in xrange(1, len(moves_branch)-1) if tuple(moves_branch[:i]) not in boards_cache]
+				sub_branches = [(tuple(moves_branch[:i]), moves_color_seq[:i], i-1) for i in xrange(1, len(moves_branch)) if tuple(moves_branch[:i]) not in boards_cache]
 				#print sub_branches
 
 				for sub_branch, sub_colors, move_cnt in sub_branches:
@@ -227,10 +229,11 @@ class ComputerPlayer(object):
 						win_dict[move_cnt+2] += 1
 					elif win:
 						loss_dict[move_cnt+2] += 1
-				
-			# for k, v in sorted(boards_cache.items(), key=lambda i: i[0]):
-				# print k
-				# print v
+			
+			if move==moves[0]:
+				for k, v in sorted(boards_cache.items(), key=lambda i: i[0], reverse=True):
+					print k
+					print v
 
 				# exit()
 				
@@ -308,7 +311,10 @@ if __name__ == "__main__":
 			player_move = raw_input("Make your move blue (1-7) or q->")
 			if player_move in 'qQ':
 				exit()
-			player_move = int(player_move) if player_move in "".join(range(1,g.width+1) else -1
+			if player_move in "".join([str(i) for i in range(1,g.width+1)]):
+				player_move = int(player_move) 
+			else: 
+				player_move = -1
 
 		if g.move_and_check('blue', player_move):
 			print g, "\nYou win!"
