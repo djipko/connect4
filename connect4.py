@@ -3,6 +3,7 @@ import itertools, copy, random, operator
 
 class _GameBoardMeta(type):
 	"""Metaclass for defining and blocking access to some atributes of a gameboard"""
+	
 	_reserved_attrs = ['color', 'width', 'height']
 	
 	def __new__(cls, name, bases, dict):
@@ -130,7 +131,7 @@ class GameBoard(object):
 		return self.is_won()
 	
 	def __repr__(self):
-		#create a list of columns - a matrix
+		#Create a list of columns - a matrix
 		column_list = [[t.color for t in self._moves_list if t.column == i] for i in xrange(1, self.width+1)]
 		#Add padding to each column so that we have propper matrix
 		for col in column_list:
@@ -142,24 +143,20 @@ class GameBoard(object):
 	
 	__metaclass__ = _GameBoardMeta
 	
-def printdict(d):
-	print "{"
-	for k in d:
-		print "\t%r - %r" %(k, d[k])
-	print "}"
-		
 class ComputerPlayer(object):
+	"""Class implementing a computer player AI and has a copy of the boeard being played"""
+
 	def __init__(self, board, color, first_move=False):
 		self.board = board
 		self.color = color
 		self.first_move = first_move
-		self.moves_ahead = 6
+		self.moves_ahead = 5
 	
 	def _calculate_next_move(self):
 		"""The function that does the AI for the game"""
 		import datetime
 		start = datetime.datetime.now() 
-		#If making the first move allways play the center
+		#If making the first move always play the center
 		if self.board.moves_no() == 0:
 			return 4
 			
@@ -170,8 +167,6 @@ class ComputerPlayer(object):
 		#All posible moves eg. all valid columns
 		all_moves = xrange(1, self.board.width+1)
 		needed_moves = [mov for mov in all_moves if self.board.get_height(mov) or (self.board.get_height(mov-1) or self.board.get_height(mov+1))]
-		#needed_moves = all_moves
-		print needed_moves
 		moves = needed_moves
 			
 		#number of moves ahead to calculate - one more if the opponent played first#
@@ -205,12 +200,8 @@ class ComputerPlayer(object):
 			
 			#Now go through them and count wins and losses
 			for moves_branch in moves_tree:
-				#print moves_branch
-				
 				#Find the sub-branch that is not laready calculated
-				#print moves_branch
 				sub_branches = [(tuple(moves_branch[:i]), moves_color_seq[:i], i-1) for i in xrange(1, len(moves_branch)) if tuple(moves_branch[:i]) not in boards_cache]
-				#print sub_branches
 
 				for sub_branch, sub_colors, move_cnt in sub_branches:
 					if len(sub_branch) == 1:
@@ -229,58 +220,12 @@ class ComputerPlayer(object):
 						win_dict[move_cnt+2] += 1
 					elif win:
 						loss_dict[move_cnt+2] += 1
-			
-			if move==moves[0]:
-				for k, v in sorted(boards_cache.items(), key=lambda i: i[0], reverse=True):
-					print k
-					print v
 
-				# exit()
-				
-				# #Check the cache if this board has been played
-				# if not moves_branch[:-1] in boards_cache: #if not - save it
-					# next_moves_board = GameBoard(first_move_board)
-					# boards_cache[moves_branch[:-1]] = next_moves_board
-					# next_moves = moves_branch
-					# moves_cnt = 0
-				# else: #just play the last move
-					# next_moves_board = boards_cache[moves_branch[:-1]]
-					# next_moves = (moves_branch[-1],) # Only the last element
-					# moves_cnt = len(moves_branch)-1
-				
-				
-				# for next_move in next_moves:
-					# #print moves_cnt
-					# try:
-						# next_moves_board.make_move(moves_color_seq[moves_cnt], next_move)
-					# except ValueError: #impossible move
-						# continue
-					# win = next_moves_board.is_won()
-					# if win == self.color:
-						# win_dict[moves_cnt+2] += 1
-					# elif win:
-						# loss_dict[moves_cnt+2] += 1
-					# moves_cnt +=1
-				
-				# #Check if all the moves were playable 
-				# if moves_ahead == next_moves_board.moves_no() - first_move_board.moves_no():
-					# next_moves_board.revoke_last_move() #if all the moves were valid moves
-				
-			print "Done with da loop"
-			#Save the dictionaries
 			wins[move] = win_dict.copy()
 			losses[move] = loss_dict.copy()
-			
-		for k in wins:
-			print k
-			printdict(wins[k])
-		for k in losses:
-			print k
-			printdict(losses[k])
 		
 		#Now analize the data and try to eliminate moves that are bad 
 		candidates = [move for move in moves if 2 not in losses[move]] #eliminate all the ones that will lead to an immediate loss
-		print candidates
 		
 		if not candidates:
 			#means that all of the moves will lead to defeat so might as well play anything
@@ -288,9 +233,6 @@ class ComputerPlayer(object):
 		
 		#Order cqandidates by those that are most likely to lead to victory eg. more victories possible
 		candidates = sorted(candidates, key=lambda m: sum(wins[m].values()), reverse=True)
-		print candidates
-		end = datetime.datetime.now()
-		print end-start
 		return candidates[0]
 		
 	def play(self):
@@ -301,6 +243,7 @@ class ComputerPlayer(object):
 if __name__ == "__main__":
 	g = GameBoard()
 	cp = ComputerPlayer(g, 'red', True)
+	valid_moves = "".join([str(i) for i in range(1,g.width+1)])
 	while 1:
 		if cp.play():
 			print g, "\nComputer wins!"
@@ -311,10 +254,7 @@ if __name__ == "__main__":
 			player_move = raw_input("Make your move blue (1-7) or q->")
 			if player_move in 'qQ':
 				exit()
-			if player_move in "".join([str(i) for i in range(1,g.width+1)]):
-				player_move = int(player_move) 
-			else: 
-				player_move = -1
+			player_move = int(player_move) if player_move in valid_moves else -1
 
 		if g.move_and_check('blue', player_move):
 			print g, "\nYou win!"
