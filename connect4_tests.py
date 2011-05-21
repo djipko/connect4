@@ -1,4 +1,4 @@
-import unittest, connect4
+import unittest, connect4, collections
 
 correct_moves_sequence = [
 	('red', 1)	,
@@ -108,12 +108,16 @@ class TestGameBoard(unittest.TestCase):
 		self.assertNotEqual(self.board, board2)
 		
 	def test_height(self):
+		counts = collections.defaultdict(int)
+		
 		self.assertEqual(self.board.get_height(6), 0)
 		for s in correct_moves_sequence:
 			self.board.make_move(*s)
-		self.assertEqual(self.board.get_height(1), 4)
-		self.assertEqual(self.board.get_height(3), 0)
-		self.assertEqual(self.board.get_height(-1), 0)
+		for t in correct_moves_sequence:
+			counts[t[1]]+=1
+		for k, v in counts.iteritems():
+			self.assertEqual(self.board.get_height(k), v)
+		
 		
 	def test_valid_fields(self):
 		for f in valid_fields:
