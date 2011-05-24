@@ -200,7 +200,7 @@ class ComputerPlayer(object):
 			
 			#Now go through them and count wins and losses
 			for moves_branch in moves_tree:
-				#Find the sub-branch that is not laready calculated
+				#Find the sub-branch that is not already calculated
 				sub_branches = [(tuple(moves_branch[:i]), moves_color_seq[:i], i-1) for i in xrange(1, len(moves_branch)) if tuple(moves_branch[:i]) not in boards_cache]
 
 				for sub_branch, sub_colors, move_cnt in sub_branches:
