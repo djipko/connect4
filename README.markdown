@@ -6,9 +6,9 @@ The implementation does not use any external data to calculate next move of the 
 #The algorythm
 
 The algorythm is very simple at the moment, and is implemented in the _calculate_next_move method of the ComputerPlayer class. It is very far from optimal, it does not take into consideration the possibility of a perfect game nor does it save already calculated positions between moves to speed up future calculations. Some of the things that can be improved immediately are:
-*  Saving state of the already calculated moves, which would significantly shorten the 'Thinking' time.
-*  Adding more sophisticated decision tree
-*  Ultimately using a pre-calculated moves datbase
+-  Saving state of the already calculated moves, which would significantly shorten the 'Thinking' time.
+-  Adding more sophisticated decision tree
+-  Ultimately using a pre-calculated moves datbase
 
 #The interface
 
